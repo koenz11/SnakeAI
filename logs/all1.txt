@@ -1,0 +1,23 @@
+10
+10
+.1.....#..
+..##...#..
+.........0
+......#...
+.........#
+........#.
+..........
+...#.#....
+....#.....
+..........
+2
+9 2
+1 0
+1Traceback (most recent call last):
+  File "player.py", line 74, in <module>
+    playField = PlayingField()
+  File "player.py", line 52, in __init__
+    for y in range(level_hoogte):
+NameError: name 'level_hoogte' is not defined
+FINISHED CPU 0.00 MEM 0 MAXMEM -1 STALE 0
+
