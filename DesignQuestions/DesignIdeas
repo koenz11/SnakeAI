@@ -1,0 +1,40 @@
+Beschrijving van het probleem en theorie
+- omschrijving snake
+- objecten ontwijken
+- andere spelers ontwijken
+- strategie:
+    - hoe beslissen we de volgende stap
+    - voedsel
+    - gangen
+
+Beschrijving van de gebruikte algoritmen, denk hierbij ook aan bijvoorbeeld de complexiteit en de gebruikte datastructuren
+Documentatie over het gebruik van de code
+Eventuele resultate die behaald zijn met de code
+Bronverwijzing naar gebruikte literatuur, websites etc.
+
+
+
+Gangen voorspellen:
+    -door veld zelf, ontwijken
+    -door andere spelers, bekijk hun lengte
+    -veld opdelen in "ruimtes" en "gangen"
+
+voorspellen wat de kans op voedsel in een leeg vakje is.
+
+Slangen verdwijnen niet als ze dood gaan.
+
+Hoe graag de slang voedsel wil eten hangt af van alle punten en zijn eigen lengte (en hoeveel blokjes er vrij zijn) en grootte veld.
+
+kan naar staart lopen, als die slang niet naar eten loopt.En als die niet dood gaat.
+
+stategy: klein blijven tot de helft van het aantal beurten/de rest dood, dan groeien?
+
+bijhouden waar andere slangen heen kunnen, als het puntenAantal hoger is, ga er expres heen, anders ontwijken.
+
+Invloed puntentelling:
+- Gangen
+- Wat gebeurt er een (aantal) beurt(en) later?
+- Voedsel in de buurt
+- Hekjes in de buurt
+- Posities en punten van andere spelers
+- Naar staarten van andere spelers lopen?

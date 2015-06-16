@@ -13,7 +13,21 @@ class Snake:
         self.nr = playerNr
         self.playField = playField
         self.blocks = [(beginPositie[0], beginPositie[1])]
+        self.playField.level[beginPositie[1]][beginPositie[0]] = '.'
+        self.playField.playerPositions[beginPositie[1]][beginPositie[0]] = 'h' + str(self.nr)
+        self.dead = False
         
+    def Die(self):
+        
+        if not self.dead:
+            for positie in self.blocks:
+                playField.level[positie[1]][positie[0]] = '#'
+                playField.playerPositions[positie[1]][positie[0]] = '.'
+                
+            self.dead = True
+            playField.updateLevel()
+        
+
     def Move(self):
         
         possibleMoves = []
@@ -32,7 +46,8 @@ class Snake:
                 continue
             '''
             
-            if playField.playerPositions[newPosition[1]][newPosition[0]] != '.':
+            playerItem = playField.playerPositions[newPosition[1]][newPosition[0]]
+            if  playerItem != '.':
                 continue
             
             print("no other players found", playField.playerPositions[newPosition[1]], playField.playerPositions[newPosition[1]][newPosition[0]])
@@ -71,10 +86,7 @@ class Snake:
         #Verander de huidige positie
         positie = (positie[0] + self.dx[directionNR], positie[1] + self.dy[directionNR])
         
-        #Let op periodieke randvoorwaarden!
-        positie = ((positie[0] + self.playField.level_breedte)% self.playField.level_breedte, (positie[1] + self.playField.level_hoogte) % self.playField.level_hoogte)
-        
-        return positie
+        return playField.checkXY(positie)
     
         
     def MoveDir(self, direction):
@@ -83,9 +95,8 @@ class Snake:
         positie = self.CalculateNewPosition(directionNR)
         
         
-        
         #als een speler zich op het voedsel begeeft, eet het voedsel op
-        if playField.level[positie[1]][positie[0]] == "x":
+        if playField.voedsel[positie[1]][positie[0]]:
             
             #correct the tail
             if len(self.blocks) > 1:
@@ -93,8 +104,8 @@ class Snake:
                 playField.playerPositions[bodyPos[1]][bodyPos[0]] = self.nr
             
             self.blocks.append(self.blocks[-1])
-            playField.level[positie[1]][positie[0]] == '.'
             #print("ate food")
+            playField.voedsel[positie[1]][positie[0]] == False
             
         else:
             #if you haven't eaten, remove last position from playerPositions
@@ -105,7 +116,7 @@ class Snake:
         #draw the body
         if len(self.blocks) > 2:
             bodyPos = self.blocks[0]
-            playField.playerPositions[bodyPos[1]][bodyPos[0]] = self.nr
+            playField.playerPositions[bodyPos[1]][bodyPos[0]] = str(self.nr)
         
         
         #beweeg alle blockjes 1 vooruit
@@ -122,6 +133,13 @@ class Snake:
             playField.playerPositions[tailPos[1]][tailPos[0]] = str(self.nr) + 't'
 
 class PlayingField:
+    
+    def checkXY(self, positie):
+        #Let op periodieke randvoorwaarden!
+        positie = ((positie[0] + self.level_breedte)% self.level_breedte, (positie[1] + self.level_hoogte) % self.level_hoogte)
+        
+        return positie
+    
     
     def __init__(self):
         ###Initialisatie
@@ -152,15 +170,113 @@ class PlayingField:
             begin_positie = [int(s) for s in input().split()]   #Maak lijst met x en y
             newSpeler = Snake(begin_positie, i, self)
             self.spelers.append(newSpeler) #voeg nieuwe speler toe
-            
-        '''
-        self.voedsel_posities = []
+             
+        self.voedsel = []
         for y in range(self.level_hoogte):
-            self.voedsel_posities.append([])
+            self.voedsel.append([])
             for x in range(self.level_breedte):
-                self.voedsel_posities[y].append(False)
+                self.voedsel[y].append(False)
+            
+        self.updateLevel()
+    
+    def updateLevel(self):
+        #voor als we iets willen doen met nieuwe obstakels?
+        #self.level = []
         
-         '''  
+        gates = []
+        
+        for y in range(self.level_hoogte):
+            for x in range(self.level_breedte):
+                
+                if self.level[y][x] == '#':
+                    continue
+                
+                newXY = self.checkXY((x, y-1))
+                up = self.level[newXY[1]][newXY[0]]
+                newXY = self.checkXY((x, y+1))
+                down = self.level[newXY[1]][newXY[0]]
+                newXY = self.checkXY((x-1, y))
+                left = self.level[newXY[1]][newXY[0]]
+                newXY = self.checkXY((x + 1, y))
+                right = self.level[newXY[1]][newXY[0]]
+                
+                
+                item = '.'
+                
+                closures = 0
+                for path in [up, down, left, right]:
+                    if path == '#':
+                        closures += 1
+                if closures > 2:
+                    item = 'D'
+                elif closures == 2:
+                    if left == '#' and right == left:
+                        item = 'G'
+                    elif up == '#' and up == down:
+                        item = 'G'
+                    else:
+                        newPoint = (0, 0)
+                        if left == '#':
+                            newPoint = (1, newPoint[1])
+                        if right == '#':
+                            newPoint = (-1, newPoint[1])
+                        if up == '#':
+                            newPoint = (newPoint[0], 1)
+                        if down == '#':
+                            newPoint = (newPoint[0], -1)
+                        
+                        newPoint = self.checkXY((newPoint[0] + x, newPoint[1] + y))
+                        
+                        if self.level[newPoint[1]][newPoint[0]] == '#':
+                            item = 'G'
+                else:
+                    continue
+                
+                if item == 'G':
+                    gates.append((x, y))
+                
+                self.level[y][x] = item
+                
+        printArray(self.level)  
+        
+        self.gebieden = []
+        for y in range(self.level_hoogte):
+            self.gebieden.append([])
+            for x in range(self.level_breedte):
+                self.gebieden[y].append(self.level[y][x])
+        
+        
+        huidigGebied = 0
+        for gate in gates:
+            x = gate[0]
+            y = gate[1]
+            up = self.checkXY((x, y-1))
+            down = self.checkXY((x, y+1))
+            left = self.checkXY((x-1, y))
+            right = self.checkXY((x + 1, y))
+            
+            for direction in [up, down, left, right]:
+                if self.gebieden[direction[1]][direction[0]] == '.':
+                    self.floodFill(direction, huidigGebied)
+            huidigGebied += 1
+        printArray(self.gebieden)
+        
+        
+    def floodFill(self, positie, nr):
+        
+        x = positie[0]
+        y = positie[1]
+        
+        self.gebieden[y][x] = str(nr)
+        
+        up = self.checkXY((x, y-1))
+        down = self.checkXY((x, y+1))
+        left = self.checkXY((x-1, y))
+        right = self.checkXY((x + 1, y))
+        
+        for direction in [up, down, left, right]:
+            if self.gebieden[direction[1]][direction[0]] == '.':
+                self.floodFill(direction, nr)
         
         
     
@@ -169,18 +285,27 @@ class PlayingField:
         for i in range(len(pBewegingen)):
             #Nu is speler_bewegingen[i] de richting waarin speler i beweegd
             direction = pBewegingen[i]
-            self.spelers[i].MoveDir(direction)
+            if direction == 'x':
+                self.spelers[i].Die()
+            else:
+                self.spelers[i].MoveDir(direction)
                     
         
 
         aantal_voedsel = int(input())   #Lees aantal nieuw voedsel en posities
+        
+        if aantal_voedsel == 0:
+            leeg = input()
         #self.voedsel_posities = []
         for i in range(aantal_voedsel):
             voedsel_positie = [int(s) for s in input().split()]
             # Sla de voedsel positie op in het level
-            self.level[voedsel_positie[1]][voedsel_positie[0]] = "x"
+            self.voedsel[voedsel_positie[1]][voedsel_positie[0]] = True
     
-    
+def printArray(array):
+    for line in array:
+        print("\t\t".join(line))
+
 
 
 playField = PlayingField()
@@ -197,8 +322,7 @@ while True:
     if line == "quit":              #We krijgen dit door als het spel is afgelopen
         print("bye")                #Geef door dat we dit begrepen hebben
         break
-
-    playField.Update(line)      
-    
-    for line in playField.playerPositions:
-        print(line)
+ 
+    print()
+    playField.Update(line)     
+    printArray(playField.playerPositions)
