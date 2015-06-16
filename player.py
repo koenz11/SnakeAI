@@ -25,7 +25,7 @@ class Snake:
             #there is an obstacle in the way
             if playField.level[newPosition[1]][newPosition[0]] == '#':
                 continue
-            print("no obstakel found")
+            print("no obstakel found", playField.level[newPosition[1]], playField.level[newPosition[1]][newPosition[0]])
             
             '''
             if playField.obstakel[newPosition[1]][newPosition[0]]:
@@ -35,7 +35,7 @@ class Snake:
             if playField.playerPositions[newPosition[1]][newPosition[0]] != '.':
                 continue
             
-            print("no other players found")
+            print("no other players found", playField.playerPositions[newPosition[1]], playField.playerPositions[newPosition[1]][newPosition[0]])
             '''
             for speler in playField.spelers:
                 for block in speler.blocks:
@@ -82,23 +82,44 @@ class Snake:
         
         positie = self.CalculateNewPosition(directionNR)
         
+        
+        
         #als een speler zich op het voedsel begeeft, eet het voedsel op
-        if playField.voedsel_posities[positie[1]][positie[0]]: 
+        if playField.level[positie[1]][positie[0]] == "x":
+            
+            #correct the tail
+            if len(self.blocks) > 1:
+                bodyPos = self.blocks[-1]
+                playField.playerPositions[bodyPos[1]][bodyPos[0]] = self.nr
+            
             self.blocks.append(self.blocks[-1])
-            playField.voedsel_posities[positie[1]][positie[0]] = False
+            playField.level[positie[1]][positie[0]] == '.'
             #print("ate food")
+            
         else:
             #if you haven't eaten, remove last position from playerPositions
             pos = self.blocks[-1]
             playField.playerPositions[pos[1]][pos[0]] = '.'
+            
+            
+        #draw the body
+        if len(self.blocks) > 2:
+            bodyPos = self.blocks[0]
+            playField.playerPositions[bodyPos[1]][bodyPos[0]] = self.nr
         
         
         #beweeg alle blockjes 1 vooruit
-        for i in range(1, len(self.blocks)):
+        for i in reversed(range(1, len(self.blocks))):
             self.blocks[i] = self.blocks[i-1]
         #het voorste blokje is de nieuwe positie
         self.blocks[0] = positie
-        playField.playerPositions[positie[1]][positie[0]] = self.nr
+        #draw the head
+        playField.playerPositions[positie[1]][positie[0]] =  'h' + str(self.nr)
+        
+        #draw the tail
+        if len(self.blocks) > 1:
+            tailPos = self.blocks[-1]
+            playField.playerPositions[tailPos[1]][tailPos[0]] = str(self.nr) + 't'
 
 class PlayingField:
     
@@ -115,13 +136,6 @@ class PlayingField:
         for y in range(self.level_hoogte):
             #self.obstakel.append([])
             line = list(input())
-            '''
-            for x in range(len(line)):
-                if line[x] == '#':
-                    self.obstakel[y].append(True)
-                else:
-                    self.obstakel[y].append(False)
-            '''        
             self.level.append(line)
         
         self.playerPositions = []
@@ -139,14 +153,14 @@ class PlayingField:
             newSpeler = Snake(begin_positie, i, self)
             self.spelers.append(newSpeler) #voeg nieuwe speler toe
             
-        
+        '''
         self.voedsel_posities = []
         for y in range(self.level_hoogte):
             self.voedsel_posities.append([])
             for x in range(self.level_breedte):
                 self.voedsel_posities[y].append(False)
         
-            
+         '''  
         
         
     
@@ -163,10 +177,7 @@ class PlayingField:
         #self.voedsel_posities = []
         for i in range(aantal_voedsel):
             voedsel_positie = [int(s) for s in input().split()]
-            # Sla de voedsel positie op in een lijst en in het level
-            self.voedsel_posities[voedsel_positie[1]][voedsel_positie[0]] = True
-            
-            #self.voedsel_posities.append(voedsel_positie)
+            # Sla de voedsel positie op in het level
             self.level[voedsel_positie[1]][voedsel_positie[0]] = "x"
     
     
@@ -189,4 +200,5 @@ while True:
 
     playField.Update(line)      
     
-    print(playField.playerPositions)
+    for line in playField.playerPositions:
+        print(line)
