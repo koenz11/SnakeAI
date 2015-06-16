@@ -22,11 +22,21 @@ class Snake:
             
             print('probeer directie', self.moves[directionNR], ':',newPosition)
             
-            if playField.obstakel[newPosition[1]][newPosition[0]]:
+            #there is an obstacle in the way
+            if playField.level[newPosition[1]][newPosition[0]] == '#':
                 continue
-            
             print("no obstakel found")
             
+            '''
+            if playField.obstakel[newPosition[1]][newPosition[0]]:
+                continue
+            '''
+            
+            if playField.playerPositions[newPosition[1]][newPosition[0]] != '.':
+                continue
+            
+            print("no other players found")
+            '''
             for speler in playField.spelers:
                 for block in speler.blocks:
                     print('player found at', block)
@@ -35,7 +45,7 @@ class Snake:
                     
                     #if block[0] == newPosition[0] and block[1] == newPosition[1]:
                     #    continue
-            print("no other players found")
+            '''
             
             possibleMoves.append(directionNR)
         print(possibleMoves)  
@@ -58,17 +68,10 @@ class Snake:
     
     def CalculateNewPosition(self, directionNR):
         positie = self.blocks[0]
+        #Verander de huidige positie
         positie = (positie[0] + self.dx[directionNR], positie[1] + self.dy[directionNR])
         
-        '''
-        #reken nieuwe positie uit
-        positie[0] += self.dx[directionNR]             #Verander de huidige positie
-        positie[1] += self.dy[directionNR]
-        
         #Let op periodieke randvoorwaarden!
-        positie[0] = (positie[0] + self.playField.level_breedte)% self.playField.level_breedte
-        positie[1] = (positie[1] + self.playField.level_hoogte) % self.playField.level_hoogte
-        '''
         positie = ((positie[0] + self.playField.level_breedte)% self.playField.level_breedte, (positie[1] + self.playField.level_hoogte) % self.playField.level_hoogte)
         
         return positie
@@ -83,19 +86,19 @@ class Snake:
         if playField.voedsel_posities[positie[1]][positie[0]]: 
             self.blocks.append(self.blocks[-1])
             playField.voedsel_posities[positie[1]][positie[0]] = False
-            print("ate food")
-       
-        ''' 
-        for foodPositie in playField.voedsel_posities:
-            if foodPositie == positie: 
-                playField.voedsel_posities.remove(foodPositie)
-                self.blocks.append(self.blocks[-1])
-        '''
+            #print("ate food")
+        else:
+            #if you haven't eaten, remove last position from playerPositions
+            pos = self.blocks[-1]
+            playField.playerPositions[pos[1]][pos[0]] = '.'
+        
+        
         #beweeg alle blockjes 1 vooruit
         for i in range(1, len(self.blocks)):
             self.blocks[i] = self.blocks[i-1]
         #het voorste blokje is de nieuwe positie
         self.blocks[0] = positie
+        playField.playerPositions[positie[1]][positie[0]] = self.nr
 
 class PlayingField:
     
@@ -107,18 +110,27 @@ class PlayingField:
         self.level_breedte = int(input())
         
         self.level = []                          #Lees het level regel voor regel
-        self.obstakel = []
+        
+        #self.obstakel = []
         for y in range(self.level_hoogte):
-            self.obstakel.append([])
+            #self.obstakel.append([])
             line = list(input())
+            '''
             for x in range(len(line)):
                 if line[x] == '#':
                     self.obstakel[y].append(True)
                 else:
                     self.obstakel[y].append(False)
-                    
+            '''        
             self.level.append(line)
-    
+        
+        self.playerPositions = []
+        for y in range(self.level_hoogte):
+            self.playerPositions.append([])
+            for x in range(self.level_breedte):
+                self.playerPositions[y].append('.')
+        
+        
         
         self.aantal_spelers = int(input())       #Lees het aantal spelers en hun posities
         self.spelers = []
@@ -127,11 +139,13 @@ class PlayingField:
             newSpeler = Snake(begin_positie, i, self)
             self.spelers.append(newSpeler) #voeg nieuwe speler toe
             
+        
         self.voedsel_posities = []
         for y in range(self.level_hoogte):
             self.voedsel_posities.append([])
             for x in range(self.level_breedte):
                 self.voedsel_posities[y].append(False)
+        
             
         
         
@@ -174,3 +188,5 @@ while True:
         break
 
     playField.Update(line)      
+    
+    print(playField.playerPositions)
