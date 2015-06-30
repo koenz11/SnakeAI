@@ -1,40 +1,77 @@
-Beschrijving van het probleem en theorie
-- omschrijving snake
-- objecten ontwijken
-- andere spelers ontwijken
-- strategie:
-    - hoe beslissen we de volgende stap
-    - voedsel
-    - gangen
+Verslag
+1 Beschrijving van het probleem en theorie
+- 1.1 omschrijving snake
+- 1.2 objecten/andere spelers ontwijken
+- 1.3 strategie:
+    - 1.3.1 voedsel
+    - 1.3.2 gangen
+    - 1.3.3 hoe beslissen we de volgende stap
+2 Beschrijving van de gebruikte algoritmen, denk hierbij ook aan bijvoorbeeld de complexiteit en de gebruikte datastructuren
+- 2.1 Informatie die we kunnen opslaan
+- 2.2 Hoe gebruiken we deze informatie
+- 2.3 Neural Network
+3 Documentatie over het gebruik van de code
+4 Eventuele resultate die behaald zijn met de code
+5 Bronverwijzing naar gebruikte literatuur, websites etc.
 
-Beschrijving van de gebruikte algoritmen, denk hierbij ook aan bijvoorbeeld de complexiteit en de gebruikte datastructuren
-Documentatie over het gebruik van de code
-Eventuele resultate die behaald zijn met de code
-Bronverwijzing naar gebruikte literatuur, websites etc.
 
 
-
-Gangen voorspellen:
+1.3.2 Gangen voorspellen:
     -door veld zelf, ontwijken
     -door andere spelers, bekijk hun lengte
     -veld opdelen in "ruimtes" en "gangen"
 
 voorspellen wat de kans op voedsel in een leeg vakje is.
 
-Slangen verdwijnen niet als ze dood gaan.
+1.1 Slangen verdwijnen niet als ze dood gaan.
 
-Hoe graag de slang voedsel wil eten hangt af van alle punten en zijn eigen lengte (en hoeveel blokjes er vrij zijn) en grootte veld.
+1.3.1 Hoe graag de slang voedsel wil eten hangt af van alle punten en zijn eigen lengte (en hoeveel blokjes er vrij zijn) en grootte veld.
 
-kan naar staart lopen, als die slang niet naar eten loopt.En als die niet dood gaat.
+kan naar staart lopen, als die slang niet naar eten loopt. En als die niet dood gaat.
 
-stategy: klein blijven tot de helft van het aantal beurten/de rest dood, dan groeien?
+1.3.1 stategy: klein blijven tot de helft van het aantal beurten/de rest dood, dan groeien?
 
 bijhouden waar andere slangen heen kunnen, als het puntenAantal hoger is, ga er expres heen, anders ontwijken.
 
-Invloed puntentelling:
-- Gangen
-- Wat gebeurt er een (aantal) beurt(en) later?
-- Voedsel in de buurt
-- Hekjes in de buurt
-- Posities en punten van andere spelers
-- Naar staarten van andere spelers lopen?
+1.3.1 Invloed puntentelling:
+- Gang:
+  - Grootte gebied tov eigen lengte en tov huidig gebied
+  - Aantal andere uitgangen (meer uitgangen -> minder punten)
+  - Aantal ander spelers in gebied
+  (eigenlengte+groottehuidiggebied)/(groottenieuwgebied * aantalspelersingebied * aantal uitgangen)
+- Staart:
+  - Eigen staart: 0 punten
+  - ???
+- DeadEnd:
+  - Iets minder punten dan hekje
+- Voedsel:
+  - Hoe lang zijn de anderen, als ze veel langer zijn minder punten
+  - Misschien hoeveel schelen we in lengte met nr1
+  - Als wij nr1 zijn: geen voedsel pakken!
+ Als levendeslangen = 0: voedsel = 0, als levendeslangen>0: voedsel = eigenlengte/nr1lengte * eigengrootte/groottehuidiggebied * 100
+- Hoofd:
+  - !!
+
+1.3.1 ideëen puntentelling voedsel:
+1.)
+30 + {lengte van eigen slang} / {aantal lege vakjes binnen een straal vanaf je eigen slang} * 10 
+    + ({aantal slang-delen van anderen binnen een straal vanaf je eigen slang} + 5) * {aantal levende andere slangen}
+        
+2.)
+als {lengte eigen slang} >= 1/4 * {grootte gehele veld} én {aantal levende andere slangen} != 0,
+dan voedsel = min [30 + ({aantal levende andere slangen} + 3)**(2) , 90]
+
+1.3.2 ideën puntentelling gangen:
+1.)
+ min [(1- max [aantal lege vakjes in aangrenzend gebied (niet eigen gebied)} / {grootte gebied}]) * 100,
+      80]
+      
+      
+- Voedsel:
+    afhankelijk van:
+     - de dichtbijzijnste spelers
+     - het aantal andere spelers
+     - hoelang het spel al bezig is, hoe langer, hoe meer je eet
+     - hoe groot het gebied is waar je in zit
+     - hoe groot zijn de andere spelers in je veld
+     

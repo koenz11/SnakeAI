@@ -1,0 +1,126 @@
+\documentclass{article}
+\usepackage{amsmath}
+
+\begin{document}
+\tableofcontents
+\section{Inleiding}
+
+
+\section{Beschrijving probleem en theorie}
+\subsection{Omschrijving van het spel}
+Het is de bedoeling dat onze snake speelt tegen de snakes die onze tegenstanders hebben geprogrammeerd. 
+Het veld bestaat uit hekjes, voedsel en uit andere spelers. De snake gaat dood als hij op andere spelers of hekjes terecht komt, 
+en hij wordt \'e\'en vakje langer als hij op voedsel terecht komt. Voedsel wordt weergegeven als een $x$. Elke snake krijgt 100 punten voor het eten van voedsel, 
+en 1000 punten als er een andere snake dood gaat terwijl hij zelf nog leeft. Ook krijgt de snake \'e\'en punt per beurt dat hij een stap zet.
+Het doel is om het hoogste puntenaantal te halen, binnen 300 aantal stappen. 
+Belangrijk is op te merken dat als er een snake dood gaat, dat deze dan niet verdwijnt maar zijn lichaam blijft liggen. 
+De dode slangen moeten dus ook in de gaten gehouden worden. 
+De snakes bewegen in volgorde van puntenaantal; de speler met de minste punten beweegt als eerst. 
+Als twee snakes dus in dezelfde beurt naar een vakje bewegen, dan gaat de snake met het meeste aantal punten dood. 
+Ook beweegt de hele slang niet in zijn geheel in \'e\'en keer, maar het hoofd verplaatst als eerst, daarna het tweede blokje en als laatst de staart. 
+Dit zorgt ervoor dat de snakes niet in een gesloten cirkel achter zichzelf aan kan blijven lopen, er moet altijd een vakje tussen zijn hoofd en staart blijven.
+
+- 1.2 objecten/andere spelers ontwijken
+\section{Strategie}
+De snake moet op een effici\"ente manier bepalen welke richting de beste keuze is. We hebben hierbij de keuze tussen 'links', 'rechts', 'boven' en 'onder'. Of een richting een slimme zet is, hangt af van waar de andere snakes zich bevinden, of er voedsel is en of hij zichzelf niet kan insluiten met zijn eigen lichaam. Het kan bijvoorbeeld voorkomen dat er een doodlopende gang in een veld is. Om dit te kunnen voorspellen wordt het gebied opgedeeld in verschillende subgebieden die worden afgesloten door hekjes en gangen, die we in \ref{Gangen} zullen defini\"eren (zie ook \ref{FF} voor de subgebieden). Het kan een strategie zijn om direct heel erg veel te eten
+
+
+
+\subsection{voedsel}
+Als het veld groot is, is veel voedsel eten een gunstige strategie. Als het veld erg klein is, beperkt dit de bewegingsvrijheid van de slang maar ook de bewegingsvrijheid van de tegenstanders.
+
+
+\subsection{Gangen\label{Gangen}}
+Het kan voorkomen dat er in een doolhof een doodlopende gang is, of dat er een gang is naar een gebiedje dat niet groot genoeg is om zelf helemaal in te kunnen. Het is belangrijk dat de snake hier niet in loopt, want dan loopt hij zichzelf klem. De snake moet dus zelf een gang kunnen detecteren. Een gang is een doorgang waar de slang \'e\'en maal doorheen kan, als de slang door de gang loopt kan hij niet meer terug. De slang definieert een gang als twee hekjes die minimaal een afstand hebben van elkaar van 2. Ofwel, een gang is een variatie op de volgende vormen:
+\begin{equation}
+\begin{matrix}
+. & \# & .\\
+. & G& . \\
+. & \# & . 
+\end{matrix} \qquad \qquad \qquad 
+\begin{matrix}
+\# & G & . \\
+. & G & \# \\
+. & . & . 
+\end{matrix}
+\end{equation}
+
+Een gang is doodlopend als er maar \'e\'en in- en uitgang is. Om dit te voorspellen wordt het veld opgedeeld in verschillende gebieden die worden gescheiden van elkaar door hekjes en gangen. Zo kunnen het aantal gangen die naar een gebied gaan worden geteld en aan de hand daarvan worden bepaald of een gebied 'veilig' is voor onze slang, zie \ref{FF}.
+
+
+1.3.1 ideëen puntentelling voedsel:
+1.)
+30 + {lengte van eigen slang} / {aantal lege vakjes binnen een straal vanaf je eigen slang} * 10 
+    + ({aantal slang-delen van anderen binnen een straal vanaf je eigen slang} + 5) * {aantal levende andere slangen}
+        
+2.)
+als {lengte eigen slang} >= 1/4 * {grootte gehele veld} én {aantal levende andere slangen} != 0,
+dan voedsel = min [30 + ({aantal levende andere slangen} + 3)**(2) , 90]
+      
+- Voedsel:
+    afhankelijk van:
+     - de dichtbijzijnste spelers
+     - het aantal andere spelers
+     - hoelang het spel al bezig is, hoe langer, hoe meer je eet
+     - hoe groot het gebied is waar je in zit
+     - hoe groot zijn de andere spelers in je veld
+
+
+
+1.3.2 ideën puntentelling gangen:
+1.)
+ min [(1- max [aantal lege vakjes in aangrenzend gebied (niet eigen gebied / grootte gebied]) * 100,
+      80]
+- Gang:
+  - Grootte gebied tov eigen lengte en tov huidig gebied
+  - Aantal andere uitgangen (meer uitgangen -> minder punten)
+  - Aantal ander spelers in gebied
+  (eigenlengte+groottehuidiggebied)/(groottenieuwgebied * aantalspelersingebied * aantal uitgangen)
+- Staart:
+  - Eigen staart: 0 punten
+  - ???
+- DeadEnd:
+  - Iets minder punten dan hekje
+- Voedsel:
+  - Hoe lang zijn de anderen, als ze veel langer zijn minder punten
+  - Misschien hoeveel schelen we in lengte met nr1
+  - Als wij nr1 zijn: geen voedsel pakken!
+ Als levendeslangen = 0: voedsel = 0, als levendeslangen>0: voedsel = eigenlengte/nr1lengte * eigengrootte/groottehuidiggebied * 100
+- Hoofd:
+  - !!
+      
+
+\section{Gebruikte algoritmen en datastructuren}
+\subsection{Floodfill \label{FF}}
+Om iets met de gebieden te kunnen doen geven we alle gebieden een "kleur" in ons geval een cijfer die van 0 tot het aantal gebieden -1 loopt. Om
+
+\subsection{Dijkstra's algoritme}
+Om te bepalen wat de volgende stap van onze snake wordt, hebben we gebruik gemaakt van een variatie op Dijkstra's algoritme. Dit algoritme ....
+\\
+De snake denkt vijf stappen vooruit. Elk vakje krijgt hierbij een bepaald aantal punten, en met behulp van een 'priority queue' wordt bepaald welke route het minste aantal punten heeft gekregen. Daarvan zet de snake de eerste stap. Dit gebeurt elke beurt opnieuw, omdat de positie van de (levende) snakes van andere spelers elke beurt verandert. Er zijn ... verschillende soorten vakjes die de snake tegen kan komen, namelijk:
+\begin{itemize}
+\item Een leeg vakje
+\item Voedsel
+\item Een gang, hierbij maken we onderscheid tussen een doodlopende gang en een doorgang tussen twee gebieden
+\item Een hekje
+\item Een andere snake
+\end{itemize}
+
+
+
+- 2.1 Informatie die we kunnen opslaan
+- 2.2 Hoe gebruiken we deze informatie
+- 2.3 Neural Network
+
+
+3 Documentatie over het gebruik van de code
+4 Eventuele resultate die behaald zijn met de code
+5 Bronverwijzing naar gebruikte literatuur, websites etc.
+
+
+
+
+     
+
+
+\end{document}

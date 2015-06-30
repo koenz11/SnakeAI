@@ -1,0 +1,48 @@
+We hebben een klasse "Snake":
+    Een "Snake" kan in de x-richting en stap naar links of rechts zetten en in de y-richting naar boven of naar beneden.
+    Een "Snake" krijgt 3 waarden met zich mee: resp. een beginpositie, een spelernummer en een speelveld.
+    De beginpositie onthouden we als een lijst onde de naam "self.blocks" met als eerste element de x-coördinaat en als tweede de y-cöordinaat.
+    We verwijderen in "self.playfield.level" de beginpositie en kopieëren die naar "self.playfield.playerPositions".
+    We voegen een "self.death" toe die aangeeft dat de "Snake" in het begin nog niet dood is.
+    Met "Self.tailLastMove" geven we de positie van de staart in de vorige beurt mee????
+
+    We definiëeren een functie "Die()":
+        Als "self.death" 'False' is, dan betekend het dat je niet zelf al dood bent gegaan.
+        In dat geval halen we alle posities van die "Snake" uit het "playField.playerPositions".
+        ?...............?
+        Alle posities van de "Snake" die dood is gegaan verplaatsen we naar "playField.level" als obstakel
+
+    We definiëren een functie "Move()":
+        Eerst maken we een lege lijst waar we alle mogelijke bewegingen inzetten.
+            Voor elke richting gaan we een functie "CalculateNewPosition()" oproepen.
+            Als in "playField.level" op de nieuw berekende posities een '#' staat, dan gaan we door naar de volgende mogelijke richting.
+            Als in "playField.playerPosition" op de nieuw berekende positie een andere "Snake" staat, dan gaan we door naar een andere mogelijke richting.
+            Als er niets in de weg zit, voegen we deze richting toe aan de lijst "possibleMoves".
+            Wanneer we geen kant op kunnen, dan gaan we omhoog.
+            Anders gebruiken we onze strategie:
+                Nu is het nog random gekozen uit de lijst "possibleMoves".
+            "richting" wordt uiteindelijk de richting die de "Snake" gaat nemen.
+        
+    We definiëren een functie "CalculateNewPosition(directionNR)":
+        We nemen de coödinaten van de kop m.b.v "self.bocks[0]".
+        De positie veranderd dan met "self.dx[directionNR]" en "self.dy[directionNR]".
+        We zorgen ervoor dat deze positie binnen het speelveld blijft door "PlayingField" met de functie "checkXY(positie)"
+        
+    We definiëren een functie "MovDir(direction)":
+        "direction" is een getal, 0 voor up etc.
+        de 'positie' wordt dan de nieuw berekende positie door "CalculateNewPosition".
+            De coördinaten van 'positie' in het "voedsel" "playField" ligt, dan:
+                Als de "Snake" langer dan 1 blokje is, dan is de positie van het laatste blokje de staart.
+                deze staart geven we in "playField.playerPositions" aan als zijn spelersnummer.
+                Aan de posities van de "Snake" voegen we nu de nieuwe staart toe, want de "Snake"is nu groter geworden.
+            Het voedsel is daar nu op, dus we verwijderen de coördinaten uit "playField.voedsel".
+        Als er geen eten lag, dan verwijderen we de posities van de staart uit "playField.playerPositions".
+        
+        Als de lengte van de "Snake" groter dan 2 is, dan heeft die ook een lichaam.
+        Dan veranderd de coördinaten van het hoofd in een lichaam: het spelersnummer.
+        
+        De oude plaats van de staart ligt nu nog op de plaats van de laatste coördinaten van "self.blocks".
+        
+        Nu gaan we elke coördinaat een stukje opschuiven in "self.blocks".
+        Het hoofd wordt nu vervangen door de coördinaten van 'positie'.
+        In "playField.playerPositions" 

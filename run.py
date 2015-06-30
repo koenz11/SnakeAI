@@ -1,7 +1,9 @@
-#!/usr/bin/python3
+#!/bin/python3
 import pexpect
 import sys
 import signal
+import random
+import math
 
 sys.path.append('../viewer')
 import mazes
@@ -43,7 +45,7 @@ for i in range(n_players):
     players[i].logfile_read = player_logs_read[i]
 
 # maze stores players, food, walls and open space
-maze = mazes.generate_maze(width,height,0.1)
+maze = mazes.generate_maze(width,height)
 
 # Store state in snapshot
 state = snapshot.Snapshot()
@@ -77,7 +79,7 @@ direction_chars = ['u',    'd',    'l',    'r']
 direction_x     = {'u': 0, 'd': 0, 'l':-1, 'r': 1}
 direction_y     = {'u':-1, 'd': 1, 'l': 0, 'r': 0}
 
-n_food_iter = max(int(n_players/4),1)
+n_food_iter = random.random()*math.ceil(n_players/2)
 
 max_timesteps = 500
 old_moves = ""
@@ -165,7 +167,6 @@ for timestep in range(max_timesteps):
         player_i = player_order[index][1]
 
         print("moving "+str(player_i) + "(with "+str(state.scores[player_i])+" points)")
-        game_log.write("Player "+str(player_i) + " has "+str(state.scores[player_i])+" points\n")
         if state.status[player_i] == 'dead':
             continue
         head_x = (state.snakes[player_i][-1][0] +
@@ -202,11 +203,15 @@ for timestep in range(max_timesteps):
                 if state.status[i] != 'dead':
                     state.scores[i] += 1000   #Score +1000 if other player dies
             continue
-            # TODO: remove body of dead snake?
             # TODO: force program to exit as well?
 
     # Spawn new food
-    spawn_food = [mazes.get_empty_cell(maze, width, height, 'x') for x in range(n_food_iter)]
+    n_food_round = 0;
+    if random.random() < n_food_iter - math.floor(n_food_iter):
+        n_food_round = math.ceil(n_food_iter)
+    else:
+        n_food_round = math.floor(n_food_iter)
+    spawn_food = [mazes.get_empty_cell(maze, width, height, 'x') for x in range(n_food_round)]
     spawn_food = [food for food in spawn_food if food != 0] #get_empty_cell returns 0 if no empty spot is found
     state.food.extend(spawn_food)
 

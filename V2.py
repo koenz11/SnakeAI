@@ -35,7 +35,7 @@ class Snake:
             #verander alles waar je nu staat in leeg
             for blockNr in range(0, len(self.blocks)):
                 positie = self.blocks[blockNr]
-                self.playField.playerPositions[positie[1]][positie[0]] = '.'
+                playField.playerPositions[positie[1]][positie[0]] = '.'
             
             #geef aan waar je staart de vorige beurt zat, want je vorige zet zorgde ervoor dat je dood ging, dus deze zet moet ongedaan worden
             self.blocks.append(self.tailLastMove)
@@ -43,7 +43,7 @@ class Snake:
             #zet de die je was de vorige beurt allemaal om in obstakels
             for blockNr in range(1, len(self.blocks)):
                 positie = self.blocks[blockNr]
-                self.playField.level[positie[1]][positie[0]] = '#'
+                playField.level[positie[1]][positie[0]] = '#'
                 
             self.dead = True
             #geef terug dat er iemand dood is gegaan
@@ -51,208 +51,45 @@ class Snake:
         #hij wist al dat hij dood was
         return False    
         
-    #Zoek de dichtsbijzijnde speler    
-    def findClosest(self, pos):
-        AndereSpelers = [speler for speler in self.playField.spelers if not speler.nr == self.nr]
-        eigengebiedNr = self.playField.gebieden[pos[1]][pos[0]]
-        
-        biggestDistance = self.playField.level_hoogte**2 + self.playField.level_breedte**2
-        closestPlayerDist = biggestDistance
-        
-        grootteAndereInGebied = 0
-        size = 1
-        
-        if eigengebiedNr.isnumeric():
-            
-            
-            for speler in AndereSpelers:
-                zijnPos = speler.blocks[0]
-                gebiedNr = self.playField.gebieden[zijnPos[1]][zijnPos[0]]
-                if not speler.dead and gebiedNr == eigengebiedNr:
-                    grootteAndereInGebied += len(speler.blocks)
-                    afstandTotSpeler = (zijnPos[0]-pos[0])**2 + (zijnPos[1]-pos[1])**2
-                    if afstandTotSpeler < closestPlayerDist:
-                        closestPlayerDist = afstandTotSpeler
-                size = max(size, len(speler.blocks[0]))
-        #print("closest player is", closestPlayerDist, "away")
-        closestRatio = 1.5 - closestPlayerDist/biggestDistance
-        sizeRatio = len(self.blocks)/size
-        
-        return [closestRatio, grootteAndereInGebied, sizeRatio]
-    # Puntengeveing aan plaatsen met voedsel
-    def pointsForEating(self, pos, closestInfo):
-        
-        aantalAndereSpelers = len(self.playField.spelers)-1
-        aantalAndereLevendeSpelers = self.playField.livingSpelers -1
-        ratio = aantalAndereLevendeSpelers/aantalAndereSpelers
-        
-        
-        
-        eigengebiedNr = self.playField.gebieden[pos[1]][pos[0]]
-        
-        
-        tijdRatio = 1-(self.playField.steps/500)
-        
-        if eigengebiedNr.isnumeric():
-            mapGrootte = self.playField.level_hoogte*self.playField.level_breedte
-            gebiedGrootte = self.playField.GebiedInfo[int(eigengebiedNr)][0]
-            
-            andereRatio = (closestInfo[1]/gebiedGrootte) + 0.5
-            gebiedRatio = 1-(gebiedGrootte/mapGrootte)
-            sizeRatio = closestInfo[2]
-            
-            formule = closestInfo[0]**2*ratio*tijdRatio*andereRatio**2*gebiedRatio**2*100
-            #print("pointsForEating:", formule, "=", closestInfo[0], ratio, tijdRatio, andereRatio, gebiedRatio, sizeRatio)
-            #formula = 1 + aantalAndereSpelers*(eigenlengte/ groottegebied)
-            
-            #return 20 + 2* aantalAndereSpelers**2
-            #lenghtSnake = (len(self.blocks)):
-            # return (100 -lenghtSnake)
-            return min(formule, 99)
-        else:
-            return 0.9*self.pointsForHallway(pos, closestInfo)
-            
-    # Puntentelling voor plaatsen waar een gang is    
-    def pointsForHallway(self, pos, closestInfo):
-        
-        eigenPos = self.blocks[0]
-        
-        eigengebiedNr = self.playField.gebieden[eigenPos[1]][eigenPos[0]]
-        gebiedGrootte = 1
-        
-        if eigengebiedNr.isnumeric():
-            gebiedGrootte = self.playField.GebiedInfo[int(eigengebiedNr)][0]
-            
-        
-        gebiedTeller = {}
-        
-        for speler in self.playField.spelers:
-            zijnPos = speler.blocks[0]
-            gbdNr = self.playField.gebieden[zijnPos[1]][zijnPos[0]]
-            
-            if not gbdNr in gebiedTeller:
-                gebiedTeller[gbdNr] = 0
-            gebiedTeller[gbdNr] += 1
-        
-        
-        gateIndex = self.playField.gatePointers[self.playField.gates.index(pos)]
-        GateUitgangen = self.playField.gateInfo[gateIndex]
-        
-        notThis = [x for x in GateUitgangen.keys() if not str(x) == eigengebiedNr]
-        
-        formule = 0
-        
-        for gbdNr in notThis:
-            info = self.playField.GebiedInfo[gbdNr]
-            gbdGrootte = info[0]
-            gbdUitgangen = info[1]
-            
-            
-            if not gbdNr in gebiedTeller:
-                Splrs = 0
-            else:
-                Splrs = gebiedTeller[gbdNr]
-            
-            formulePart = 1/(gbdGrootte)* (gbdUitgangen/(Splrs+1))
-            formule += formulePart
-        
-        
-        eigenLengte = len(self.blocks)    
-        
-        formule *= (eigenLengte + gebiedGrootte)/(len(notThis)+1)
-        formule *= self.pointsForDeadEnd()
-        
-        
-        AndereSpelers = [speler for speler in self.playField.spelers if not speler.nr == self.nr]
-        biggestDistance = self.playField.level_hoogte**2 + self.playField.level_breedte**2
-        closestPlayerDist = biggestDistance
-        for speler in AndereSpelers:
-            zijnPos = speler.blocks[0]
-            gbdNr = self.playField.gebieden[zijnPos[1]][zijnPos[0]]
-            if not speler.dead and gbdNr in notThis:
-                afstandTotSpeler = (zijnPos[0]-pos[0])**2 + (zijnPos[1]-pos[1])**2
-                if afstandTotSpeler < closestPlayerDist:
-                    closestPlayerDist = afstandTotSpeler
-        
-        formule +=  75*(1.5 - closestPlayerDist/biggestDistance)**3
-       
-        #print("gateFormule:", formule) 
-        
-        return formule
-        
-    #puntentelling voor lege plaatsen
-    def pointsForEmpty(self, pos, closestInfo):
-        
-        formule = 75 * closestInfo[0]**3 + (25 - 0.5*self.pointsForEating(pos, closestInfo))
-        #print("pointsforEmpty:", formule)
-        return formule
-    
-    #punten voor een staart
-    def pointsForTail(self, tail):
-        
-        ownLength = len(self.blocks)
-        
-        spelerNr = int(tail[:-1])
-        
-        if spelerNr == self.nr:
-            return (self.pointsForDeadEnd()*0.8)
-        else:
-            otherLength = len(self.playField.spelers[spelerNr].blocks)
-            if otherLength < ownLength:
-                return (self.pointsForDeadEnd()*0.7)
-            elif otherLength == ownLength:
-                return (self.pointsForDeadEnd()*0.9)
-            else:
-                return (self.pointsForDeadEnd()*1.5)
-    
-    #punten voor een vakje met "D", of een lichaam van een ander (kan verplaatsen, dus niet zekere dood)
-    def pointsForDeadEnd(self):
-        return 500
-        
-    def pointsForFoundSnake(self, snake):
-        if 't' in snake:
-            return self.pointsForTail(snake)
-            
-        if 'h'in snake:
-            return (self.pointsForDeadEnd()*3)
-        
-        return self.pointsForDeadEnd()
-        
     def costForPosition(self, pos):
         
-        item = self.playField.level[pos[1]][pos[0]]
+        item = playField.level[pos[1]][pos[0]]
         
-        closest = self.findClosest(pos)
         
         if item == "#":
             return -1
         elif item == "D":
-            return self.pointsForDeadEnd()
+            return 9
         else:
-            playerItem = self.playField.playerPositions[pos[1]][pos[0]]
+            playerItem = playField.playerPositions[pos[1]][pos[0]]
+            if 't' in playerItem:
+                return 8
             if playerItem == '.':
-                eten = self.playField.voedsel[pos[1]][pos[0]]
+                
+                eten = playField.voedsel[pos[1]][pos[0]]
                 if eten:
-                    return self.pointsForEating(pos, closest)
+                    return 3
                 if item == "G":
-                    return self.pointsForHallway(pos, closest)
-                #leeg punt
-                return self.pointsForEmpty(pos, closest)
+                    return 2
+                #gang en leeg = 1 punt
+                return 1
+                
             else:
-                return self.pointsForFoundSnake(playerItem)
+                return 100
+            
+            
         
     def FindPath(self):
         
-        #print("start: ", start)
-        
+        start = self.blocks[0]
+        print("start: ", start)
         
         paths = []
         bodyQueue = collections.deque()
         for x in reversed(range(len(self.blocks))):
             bodyQueue.append(self.blocks[x])
-        heapq.heappush(paths, (0, bodyQueue, [], 0))
+        heapq.heappush(paths, (0, bodyQueue, []))
         
-        calculated = {}
         
         while not len(paths) == 0:
             #print(paths.qsize())
@@ -271,26 +108,17 @@ class Snake:
             for nextDir in range(len(self.moves)):
                 newPosition = self.CalculateNewPosition(nextDir, current)
                 if newPosition not in currentPath[1]:
-                    if not newPosition in calculated:
-                        calculateCost = int(self.costForPosition(newPosition))
-                        calculated[newPosition] = calculateCost
-                    else:
-                        calculateCost = calculated[newPosition]
+                    calculateCost = self.costForPosition(newPosition)
                     if calculateCost >= 0:
-                        eetHier = 0
-                        if self.playField.voedsel[newPosition[1]][newPosition[0]]:
-                            eetHier = 1
-                        gegeten = currentPath[3] + eetHier
                         newCost = currentPath[0] + calculateCost
                         newBodyList = copy.copy(currentPath[1])
                         newBodyList.append(newPosition)
-                        if len(newBodyList) > len(self.blocks) + gegeten:
+                        if len(newBodyList) > len(self.blocks):
                             newBodyList.popleft()
                         directionList = currentPath[2][:]
                         directionList.append(nextDir)
-                        
                         #newPath = {"pos":newPosList, "dir":directionList}
-                        newTuple = (newCost, newBodyList, directionList, gegeten)
+                        newTuple = (newCost, newBodyList, directionList)
                         #print("new Path:", newTuple)
                         heapq.heappush(paths, newTuple)
                 
@@ -319,10 +147,8 @@ class Snake:
     #bepaal de beste kan die je op kan gaan
     def Move(self):
         #'''
-        T1 = time.perf_counter()
         path = self.FindPath()
-        T2 = time.perf_counter()
-        print(path, "found in", T2 - T1, "seconds")
+        print(path)
         
         print("move")
         
@@ -400,7 +226,7 @@ class Snake:
         #Verander de huidige positie
         positie = (positie[0] + self.dx[directionNR], positie[1] + self.dy[directionNR])
         
-        return self.playField.checkXY(positie)
+        return playField.checkXY(positie)
     #beweeg een kant op   
     def MoveDir(self, direction):
         directionNR = self.moves.index(direction)
@@ -409,29 +235,28 @@ class Snake:
         
         
         #als een speler zich op het voedsel begeeft, eet het voedsel op
-        if self.playField.voedsel[positie[1]][positie[0]]:
+        if playField.voedsel[positie[1]][positie[0]]:
             
             #correct the tail
             if len(self.blocks) > 1:
                 bodyPos = self.blocks[-1]
-                self.playField.playerPositions[bodyPos[1]][bodyPos[0]] = self.nr #Moet niet str(self.nr) zijn?
+                playField.playerPositions[bodyPos[1]][bodyPos[0]] = self.nr #Moet niet str(self.nr) zijn?
             
             #voeg een extra slangenstuk toe aan het eind van het lichaam, er is alleen tijdelijk 2x hetzelfde stuk omdat alles zometeen 1 vooruit wordt geschoven, dus de positie van dit block maakt eigenlijk niet echt uit
-            self.blocks.append(self.blocks[-1]) 
-            # Krijg je niet twee keer de coordinaten van self.blocks[-1]?
+            self.blocks.append(self.blocks[-1]) # Krijg je niet twee keer de coördinaten van self.blocks[-1]?
             #print("ate food")
-            self.playField.voedsel[positie[1]][positie[0]] == False
+            playField.voedsel[positie[1]][positie[0]] == False
             
         else:
             #if you haven't eaten, remove last position from playerPositions
             pos = self.blocks[-1]
-            self.playField.playerPositions[pos[1]][pos[0]] = '.'
+            playField.playerPositions[pos[1]][pos[0]] = '.'
             
             
         #draw the body
         if len(self.blocks) > 2:
             bodyPos = self.blocks[0]
-            self.playField.playerPositions[bodyPos[1]][bodyPos[0]] = str(self.nr)
+            playField.playerPositions[bodyPos[1]][bodyPos[0]] = str(self.nr)
         
         
         self.tailLastMove = self.blocks[-1]
@@ -442,13 +267,13 @@ class Snake:
         #het voorste blokje is de nieuwe positie
         self.blocks[0] = positie
         #draw the head
-        self.playField.playerPositions[positie[1]][positie[0]] =  'h' + str(self.nr)
+        playField.playerPositions[positie[1]][positie[0]] =  'h' + str(self.nr)
         
         
         #draw the tail
         if len(self.blocks) > 1:
             tailPos = self.blocks[-1]
-            self.playField.playerPositions[tailPos[1]][tailPos[0]] = str(self.nr) + 't'
+            playField.playerPositions[tailPos[1]][tailPos[0]] = str(self.nr) + 't'
 
 class PlayingField:
     
@@ -460,7 +285,6 @@ class PlayingField:
         
         self.level_hoogte = int(input())         #Lees hoe groot het level is
         self.level_breedte = int(input())
-        self.steps = 1
         
         self.level = []                          #Lees het level regel voor regel
         
@@ -477,8 +301,8 @@ class PlayingField:
                 self.playerPositions[y].append('.')
         
         
+        
         self.aantal_spelers = int(input())       #Lees het aantal spelers en hun posities
-        self.livingSpelers = self.aantal_spelers
         self.spelers = []
         for i in range(self.aantal_spelers):
             begin_positie = [int(s) for s in input().split()]   #Maak lijst met x en y
@@ -596,8 +420,9 @@ class PlayingField:
                 self.level[y][x] = item
         T2 = time.perf_counter()  
         
+        print("calculated gates for a field with size (", self.level_breedte, ",", self.level_hoogte, ") in", T2-T1, "seconds")
         #printArray(self.level)  
-        
+        '''
         
         #copieer het level zodat je het op kan delen in gebieden met behulp van floodfill
         self.gebieden = []
@@ -654,43 +479,15 @@ class PlayingField:
                 
         T4 = time.perf_counter()
         
-        
-        
-        ##join gates here somewhere:
-        oldGateLength = len(self.gates)
-        self.gatePointers = {}
-        
-        for gate in range(len(self.gates)):
-            self.gatePointers[gate] = gate
-        
-        added = 0
-        for merge in toMerge:
-            if self.gatePointers[merge[0]] < oldGateLength:
-                self.gatePointers[merge[0]] = oldGateLength + added
-                self.gatePointers[merge[1]] = oldGateLength + added
-                added += 1
-                newGateInfo = {}
-                for exit in self.gateInfo[merge[0]].keys():
-                    newGateInfo[exit] = self.gateInfo[merge[0]][exit]
-                
-                for exit in self.gateInfo[merge[1]].keys():
-                    if exit not in newGateInfo:
-                        newGateInfo[exit] = self.gateInfo[merge[1]][exit]
-                    else:
-                        newGateInfo[exit] += self.gateInfo[merge[1]][exit]
-                    
-                
-                self.gateInfo.append(newGateInfo)
-                
-        
-        
+          
         #print(toMerge);
+        ##join gates here somewhere:
             
         ###
         
         T5 = time.perf_counter()
         #bereken hoeveel gates uitgangen zijn voor elk gebied.
-        for gateNr in range(oldGateLength):
+        for gateNr in range(len(self.gateInfo)):
             gebieden = list(self.gateInfo[gateNr].keys())
             if len(gebieden) > 1:
                 for gebiedNr in gebieden:
@@ -705,13 +502,13 @@ class PlayingField:
         
         
         
-        print("calculated gates for a field with size (", self.level_breedte, ",", self.level_hoogte, ") in", T2-T1, "seconds")
-        print("merging gates took:", T5-T4,"seconds")
         print("finding gate Exits took: ", T6-T5, "seconds")
         print("finding areas took: ", T4-T3, "seconds")
         print("calculated new Level in ", T6 - T1, "seconds")
         
         printArray(self.gebieden)
+        '''
+        
         
     #floodfill, voor het bepalen van gebieden
     def floodFill(self, positie, nr):
@@ -734,31 +531,22 @@ class PlayingField:
     
     #er is een beurt geweest, dus zet alle zetten van de andere spelers in ons geheugen. En kijk waar het voedsel zit
     def Update(self, pBewegingen):
-        self.steps += 1
-        snakesDied = 0
         
-        
-        tempQ = []
-        for i in range(len(self.spelers)):
-            p = self.spelers[i]
-            heapq.heappush(tempQ, (len(p.blocks), p.nr))
+        someOneDied = False
         
         #String met bewegingen van alle spelers
-        #for i in range(len(pBewegingen)):
-        while not len(tempQ) == 0:
-            i = heapq.heappop(tempQ)[1]
+        for i in range(len(pBewegingen)):
             #Nu is speler_bewegingen[i] de richting waarin speler i beweegd
             direction = pBewegingen[i]
             if direction == 'x':
                 #als er een x is, is er misschien iemand doodgegaan, controlleer dat nu
-                if self.spelers[i].Die():
-                    snakesDied += 1
+                someOneDied = someOneDied or self.spelers[i].Die()
             else:
                 #beweeg anders de speler gewoon
                 self.spelers[i].MoveDir(direction)
+        
         #als er snakes dood zijn gegaan deze beurt, update het level
-        if snakesDied > 0:
-            self.livingSpelers -= snakesDied
+        if someOneDied:
             self.updateLevel()
         
         
@@ -774,25 +562,13 @@ class PlayingField:
             voedsel_positie = [int(s) for s in input().split()]
             # Sla de voedsel positie op in het level
             self.voedsel[voedsel_positie[1]][voedsel_positie[0]] = True
-        
-        printBoolArray(self.voedsel)
  
  
 #een manier om netjes een lijst van lijsten te printen  
 def printArray(array):
     print()
     for line in array:
-        print("\t".join(line))
-
-def printBoolArray(array):
-    print()
-    for line in array:
-        toPrint = ""
-        for row in line:
-            if row:
-                toPrint += "x\t"
-            else:
-                toPrint += ".\t"
+        print("\t\t".join(line))
 
 
 #print("starting")
