@@ -392,12 +392,11 @@ class PlayingField:
         
         self.level = []                          #Lees het level regel voor regel
         
-        #self.obstakel = []
         for y in range(self.level_hoogte):
-            #self.obstakel.append([])
             line = list(input())
             self.level.append(line)
         
+        #creeer het playerPositie veld
         self.playerPositions = []
         for y in range(self.level_hoogte):
             self.playerPositions.append([])
@@ -430,8 +429,6 @@ class PlayingField:
     
     #het level is veranderd, dus update onze informatie
     def updateLevel(self):
-        #voor als we iets willen doen met nieuwe obstakels?
-        #self.level = []
         
         self.gates = []
         
@@ -512,7 +509,7 @@ class PlayingField:
                                 direct = (direct[0] - toAdd[nr][0], direct[1] - toAdd[nr][1])
                                             
                     if closures > 1:
-                        #print("closures found of with added direction", direct, "added that is", direct[0] + direct[1])
+                        #als de afstand tussen de hekjes meer is als 2, dan is er een gate
                         if abs(direct[0] + direct[1]) > 2:
                             item = 'G'
                     else:
@@ -523,8 +520,6 @@ class PlayingField:
                 
                 self.level[y][x] = item
         T2 = time.perf_counter()  
-        
-        #printArray(self.level)  
         
         
         #copieer het level zodat je het op kan delen in gebieden met behulp van floodfill
@@ -550,7 +545,7 @@ class PlayingField:
             gate = self.gates[gateNr]
             x = gate[0]
             y = gate[1]
-            
+            #geef de gate een nummer
             self.gebieden[y][x] = "G" + str(gateNr)
             
             up = self.checkXY((x, y-1))
@@ -560,42 +555,44 @@ class PlayingField:
             
             self.gateInfo.append({})
             
+            #bekijk of deze gate zich in een groep bevindt
             thisGroup = -1
             if gateNr in groupPointers:
                 thisGroup = groupPointers[gateNr]
             
+            #onderzoek alle richtingen voor nieuwe gebieden en gateGroepen
             for direction in [up, down, left, right]:
                 
                 found = self.gebieden[direction[1]][direction[0]]
-                
+                #niks gevonden, dus maak een nieuw gebied
                 if  found == '.':
                     geverftGrootte = self.floodFill(direction, huidigGebiedAantal)
-                    #print("gebied", huidigGebiedAantal, "heeft", geverft, "gebieden geverft")
-                    
+                    #voeg info over dit gebied toe aan self.GebiedInfo
                     self.GebiedInfo.append([geverftGrootte, 0])
+                    #deze gate heeft dus in ieder geval 1 uitgang in dit nieuwe gebied
                     self.gateInfo[gateNr][huidigGebiedAantal] = 1
                     
                     huidigGebiedAantal += 1
-                elif str(found).isnumeric(): #isinstance( found, int ):
+                #als een nummer gevonden is, dan is het al een gebied, voeg dan alleen de uitgang naar het gevonden gebied toe aan gateInfo 
+                elif str(found).isnumeric():
                     if int(found) in self.gateInfo[gateNr]:
                         self.gateInfo[gateNr][int(found)] += 1
                     else:
                         self.gateInfo[gateNr][int(found)] = 1
-                    #if int(found) not in self.gates[gateNr]:
-                    #self.gateInfo[gateNr].append(int(found))
+                #als we een gate gevonden hebben, bekijken we welke groep deze zich bevind
                 elif found == "G":
-                        
-                    
                     othergateNr = self.gates.index(direction)
-                    #toMerge.append([gateNr, othergateNr])
                     
-                    
+                    #zoek zijn groep op
                     otherGroup = -1
                     if othergateNr in groupPointers:
                         otherGroup = groupPointers[othergateNr]
-                    
-                    #print("thisGroup:", thisGroup, " - otherGroup:", otherGroup, "(", gateNr, ",", othergateNr,")")
                         
+                        
+                    #er zijn 3 verschillende mogelijkheden
+                    # 1. geen van beide zit in een groep -> maak een nieuwe groep aan
+                    # 2. een van beide zit al in een groep -> voeg het gebied zonder groep toe aan de groep
+                    # 3. beide zitten al in een groep -> voeg de groepen samen tot 1 groep
                     if thisGroup == -1:
                         if otherGroup == -1:
                             groups.append([gateNr, othergateNr])
@@ -615,42 +612,39 @@ class PlayingField:
                                     groups[thisGroup].append(x)
                                 groupPointers[x] = thisGroup
                             groups[otherGroup] = []
-                            
-                            #groups[thisGroup].extend(groups[otherGroup])
                             otherGroup = thisGroup
                     
+                    #zet de groepnummers voor de gates goed
                     groupPointers[gateNr] = thisGroup
                     groupPointers[othergateNr] = otherGroup
-            
-            
-        print("groups created:", groups, "pointers:", groupPointers)
-            #print("gate nr: ", gateNr, ":", self.gates[gateNr] ,"-", self.gateInfo[gateNr])
-              
-                
+        
         T4 = time.perf_counter()
         
         
         
-        ##join gates here
+        ##join gatesInfo of the groep
         oldGateLength = len(self.gates)
             
         added = 0
         for group in groups:
             if len(groups) > 0:
                 
-                newGateInfo = {}
+                newGateInfo = 
+                #creeer de nieuwe gateInfo voor de groep
                 beenAdded = []
                 for gateNr in group:
+                    #voorkom dat gates dubbel worden toegevoegd, elke groep zou all uniek moeten zijn, maar voor de zekerheid
                     if gateNr in beenAdded:
                         continue
                     else:
                         beenAdded.append(gateNr)
                     
                     gatePos = self.gates[gateNr]
+                    #geef het groepsnummer aan de gate
                     self.gebieden[gatePos[1]][gatePos[0]] = "G" + str(oldGateLength + added)
                     
-                    #self.gatePointers[gateNr] = oldGateLength + added
                     
+                    #voeg alle gateInfo samen tot 1 gateInfo
                     for exit in self.gateInfo[gateNr].keys():
                         exitAmount = self.gateInfo[gateNr][exit]
                         if exit not in newGateInfo:
@@ -673,7 +667,7 @@ class PlayingField:
         T6 = time.perf_counter()
         
         
-    #floodfill, voor het bepalen van gebieden
+    #floodfill, voor het bepalen van gebieden, geeft de grootte van het gevonden gebied terug
     def floodFill(self, positie, nr):
         
         x = positie[0]
@@ -686,7 +680,7 @@ class PlayingField:
         down = self.checkXY((x, y+1))
         left = self.checkXY((x-1, y))
         right = self.checkXY((x + 1, y))
-        
+        #floodfill alle andere gebieden om je heen die niet leeg zijn
         for direction in [up, down, left, right]:
             if self.gebieden[direction[1]][direction[0]] == '.':
                 geverft += self.floodFill(direction, nr)
@@ -697,14 +691,13 @@ class PlayingField:
         self.steps += 1
         snakesDied = 0
         
-        
+        #sorteer de spelers op puntenaantal (lengte) zodat de beurten in de goede volgorde gebeuren
         tempQ = []
         for i in range(len(self.spelers)):
             p = self.spelers[i]
             heapq.heappush(tempQ, (len(p.blocks), p.nr))
         
-        #String met bewegingen van alle spelers
-        #for i in range(len(pBewegingen)):
+        #beweeg alle spelers
         while not len(tempQ) == 0:
             i = heapq.heappop(tempQ)[1]
             #Nu is speler_bewegingen[i] de richting waarin speler i beweegd
@@ -716,6 +709,7 @@ class PlayingField:
             else:
                 #beweeg anders de speler gewoon
                 self.spelers[i].MoveDir(direction)
+                
         #als er snakes dood zijn gegaan deze beurt, update het level
         if snakesDied > 0:
             self.livingSpelers -= snakesDied
@@ -738,7 +732,7 @@ def printArray(array):
     print()
     for line in array:
         print("\t".join(line))
-
+# een manier om netjes een lijst van lijstjes met bools te printen
 def printBoolArray(array):
     print()
     for line in array:
@@ -750,7 +744,6 @@ def printBoolArray(array):
                 toPrint += ".\t"
 
 
-#print("starting")
 #creëer een playingField
 playField = PlayingField()
 #bepaal welke slang wij zijn aan de hand van input
