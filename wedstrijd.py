@@ -75,7 +75,7 @@ class Snake:
             size = max(size, len(speler.blocks[0]))
         #print("closest player is", closestPlayerDist, "away")
         closestRatio = 1.5 - closestPlayerDist/biggestDistance
-        sizeRatio = len(self.blocks)/size + 1
+        sizeRatio = len(self.blocks)/size
         
         return [closestRatio, grootteAndereInGebied, sizeRatio]
     # Puntengeveing aan plaatsen met voedsel
@@ -162,7 +162,7 @@ class Snake:
         eigenLengte = len(self.blocks)    
         
         formule *= (eigenLengte + gebiedGrootte)/(len(notThis)+1)
-        formule *= self.pointsForDeadEnd()
+        formule *= self.pointsForEmpty(pos, closestInfo)
         
         
         AndereSpelers = [speler for speler in self.playField.spelers if not speler.nr == self.nr]
@@ -186,7 +186,7 @@ class Snake:
     def pointsForEmpty(self, pos, closestInfo):
         
         formule = 100 * closestInfo[0]**3
-        print("pointsforEmpty:", formule)
+        #print("pointsforEmpty:", formule)
         return formule
     
     #punten voor een staart
@@ -235,6 +235,7 @@ class Snake:
             if playerItem == '.':
                 eten = self.playField.voedsel[pos[1]][pos[0]]
                 if eten:
+                    print("found food")
                     return self.pointsForEating(pos, closest)
                 if "G" in item:
                     return self.pointsForHallway(pos, closest)
