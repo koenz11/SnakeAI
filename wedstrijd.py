@@ -62,21 +62,20 @@ class Snake:
         grootteAndereInGebied = 0
         size = 1
         
-        if eigengebiedNr.isnumeric():
             
             
-            for speler in AndereSpelers:
-                zijnPos = speler.blocks[0]
-                gebiedNr = self.playField.gebieden[zijnPos[1]][zijnPos[0]]
-                if not speler.dead and gebiedNr == eigengebiedNr:
-                    grootteAndereInGebied += len(speler.blocks)
-                    afstandTotSpeler = (zijnPos[0]-pos[0])**2 + (zijnPos[1]-pos[1])**2
-                    if afstandTotSpeler < closestPlayerDist:
-                        closestPlayerDist = afstandTotSpeler
-                size = max(size, len(speler.blocks[0]))
+        for speler in AndereSpelers:
+            zijnPos = speler.blocks[0]
+            gebiedNr = self.playField.gebieden[zijnPos[1]][zijnPos[0]]
+            if not speler.dead and eigengebiedNr.isnumeric() and gebiedNr == eigengebiedNr:
+                grootteAndereInGebied += len(speler.blocks)
+                afstandTotSpeler = (zijnPos[0]-pos[0])**2 + (zijnPos[1]-pos[1])**2
+                if afstandTotSpeler < closestPlayerDist:
+                    closestPlayerDist = afstandTotSpeler
+            size = max(size, len(speler.blocks[0]))
         #print("closest player is", closestPlayerDist, "away")
         closestRatio = 1.5 - closestPlayerDist/biggestDistance
-        sizeRatio = len(self.blocks)/size
+        sizeRatio = len(self.blocks)/size + 1
         
         return [closestRatio, grootteAndereInGebied, sizeRatio]
     # Puntengeveing aan plaatsen met voedsel
@@ -92,6 +91,9 @@ class Snake:
         
         
         tijdRatio = 1-(self.playField.steps/500)
+        sizeRatio = closestInfo[2]
+        
+        formule = 2*sizeRatio**3*ratio*tijdRatio
         
         if eigengebiedNr.isnumeric():
             mapGrootte = self.playField.level_hoogte*self.playField.level_breedte
@@ -99,18 +101,15 @@ class Snake:
             
             andereRatio = (closestInfo[1]/gebiedGrootte) + 0.5
             gebiedRatio = 1-(gebiedGrootte/mapGrootte)
-            sizeRatio = closestInfo[2]
             
-            formule = closestInfo[0]**2*ratio*tijdRatio*andereRatio**2*gebiedRatio**2*100
-            #print("pointsForEating:", formule, "=", closestInfo[0], ratio, tijdRatio, andereRatio, gebiedRatio, sizeRatio)
-            #formula = 1 + aantalAndereSpelers*(eigenlengte/ groottegebied)
-            
-            #return 20 + 2* aantalAndereSpelers**2
-            #lenghtSnake = (len(self.blocks)):
-            # return (100 -lenghtSnake)
-            return min(formule, 99)
+            formule *= andereRatio**2*gebiedRatio**2
+            print("eatRatio:", formule, "=", ratio, tijdRatio, andereRatio, gebiedRatio, sizeRatio)
+            formule *= self.pointsForEmpty(pos, closestInfo)
         else:
-            return 0.9*self.pointsForHallway(pos, closestInfo)
+            print("eatRatio:", formule, "=", ratio, tijdRatio, closestInfo[1])
+            formule *= self.pointsForHallway(pos, closestInfo)
+            
+        return formule
             
     # Puntentelling voor plaatsen waar een gang is    
     def pointsForHallway(self, pos, closestInfo):
@@ -135,12 +134,15 @@ class Snake:
             gebiedTeller[gbdNr] += 1
         
         
-        gateIndex = self.playField.gatePointers[self.playField.gates.index(pos)]
+        gateIndex = int(self.playField.gebieden[pos[1]][pos[0]][1:])#self.playField.gatePointers[self.playField.gates.index(pos)]
         GateUitgangen = self.playField.gateInfo[gateIndex]
         
         notThis = [x for x in GateUitgangen.keys() if not str(x) == eigengebiedNr]
         
         formule = 0
+        if len(GateUitgangen) == 1:
+            print("doodlopend gevonden voor gate:", gateIndex, "-", GateUitgangen.keys())
+            return self.pointsForDeadEnd()*0.95
         
         for gbdNr in notThis:
             info = self.playField.GebiedInfo[gbdNr]
@@ -176,15 +178,15 @@ class Snake:
         
         formule +=  75*(1.5 - closestPlayerDist/biggestDistance)**3
        
-        #print("gateFormule:", formule) 
+        print("gatePoints for gate:", gateIndex, "=", formule*(1/6)) 
         
-        return formule
+        return formule*(1/6)
         
     #puntentelling voor lege plaatsen
     def pointsForEmpty(self, pos, closestInfo):
         
-        formule = 75 * closestInfo[0]**3 + (25 - 0.5*self.pointsForEating(pos, closestInfo))
-        #print("pointsforEmpty:", formule)
+        formule = 100 * closestInfo[0]**3
+        print("pointsforEmpty:", formule)
         return formule
     
     #punten voor een staart
@@ -207,7 +209,7 @@ class Snake:
     
     #punten voor een vakje met "D", of een lichaam van een ander (kan verplaatsen, dus niet zekere dood)
     def pointsForDeadEnd(self):
-        return 500
+        return 5000
         
     def pointsForFoundSnake(self, snake):
         if 't' in snake:
@@ -234,7 +236,7 @@ class Snake:
                 eten = self.playField.voedsel[pos[1]][pos[0]]
                 if eten:
                     return self.pointsForEating(pos, closest)
-                if item == "G":
+                if "G" in item:
                     return self.pointsForHallway(pos, closest)
                 #leeg punt
                 return self.pointsForEmpty(pos, closest)
@@ -261,7 +263,9 @@ class Snake:
             current = currentPath[1][-1]#.get()
             #print("current:", currentPath, " - ", current, " len = ", len(currentPath[2]))
             
-            if len(currentPath[2]) > 4:
+            pathLength = len(currentPath[2])
+            
+            if pathLength > 4:
                 break
             
             '''
@@ -281,7 +285,8 @@ class Snake:
                         if self.playField.voedsel[newPosition[1]][newPosition[0]]:
                             eetHier = 1
                         gegeten = currentPath[3] + eetHier
-                        newCost = currentPath[0] + calculateCost
+                        newCost = (currentPath[0]+ calculateCost)
+                        
                         newBodyList = copy.copy(currentPath[1])
                         newBodyList.append(newPosition)
                         if len(newBodyList) > len(self.blocks) + gegeten:
@@ -294,26 +299,7 @@ class Snake:
                         #print("new Path:", newTuple)
                         heapq.heappush(paths, newTuple)
                 
-                
-                '''
-                if newPosition not in costSoFar or newCost < costSoFar[newPosition]:
-                    costSoFar[newPosition] = newCost
-                    heapq.heappush(paths, (newCost, newPosition))
-                    #paths.put(newCost, newPosition)
-                    cameFrom[newPosition] = current
-                    dirWent[newPosition] = nextDir
-                    pathLength[newPosition] = pathLength[current] + 1
-                    print("dir: ", nextDir, "current: ", current, " = ", newPosition, " - ", newCost)
-                '''
-                
-                
         
-        '''
-        path = []
-        while not current == start:
-            path.append(dirWent[current])
-            current = cameFrom[current]
-        '''
         return currentPath[2]
         
     #bepaal de beste kan die je op kan gaan
@@ -328,69 +314,6 @@ class Snake:
         
         richting = self.moves[path[0]]
         print(richting)
-        #'''
-        
-        '''
-        
-        dangerousMoves = []
-        possibleMoves = []
-        #kijk voor alle mogelijke kanten die je op kan bewegen, of dit niet je dood veroorzaakt
-        for directionNR in range(len(self.moves)):
-            newPosition = self.CalculateNewPosition(directionNR)
-            
-            #print('probeer directie', self.moves[directionNR], ':',newPosition)
-        
-            
-            fieldItem = playField.level[newPosition[1]][newPosition[0]]
-            #er is an obstakel in de weg
-            if fieldItem == '#':
-                continue
-            
-            if fieldItem == 'D':
-                #als je langer bent als 1, dan is het zekere dood volgende beurt, maar beter als zekere dood nu
-                #als er voedsel zit, is het zekere dood volgende beurt, anders is het veilig zolang je maar 1 lang bent
-                if len(self.blocks) > 1 or playField.voedsel[newPosition[1]][newPosition[0]]:
-                    dangerousMoves.append(directionNR)
-                    continue
-            #print("no obstakel found", playField.level[newPosition[1]], playField.level[newPosition[1]][newPosition[0]])
-            
-            #er zit een speler in de weg
-            playerItem = playField.playerPositions[newPosition[1]][newPosition[0]]
-            if  playerItem != '.':
-                #het is een staart, dus als je niks anders kan, is dit nog een optie
-                if "t" in playerItem:
-                    dangerousMoves.append(directionNR)
-                continue
-            #print("no other players found", playField.playerPositions[newPosition[1]], playField.playerPositions[newPosition[1]][newPosition[0]])
-            
-            #niks in de weg, dus voeg toe
-            possibleMoves.append(directionNR)
-        print(possibleMoves)  
-        
-        #als je nergens heen kan, doe dan maar gewoon omhoog
-        
-        print('move') #Geef door dat we gaan bewegen
-        #Als ergens een staart is, dan kunnen we beter die kant op gaan als we nergens anders heen kunnen ;),niet?
-        if len(possibleMoves) == 0:
-            if len(dangerousMoves) == 0:
-                print('u') #Geef de richting door
-            else:
-                i = random.randrange(len(dangerousMoves))
-                newMove = dangerousMoves[i]
-                richting = self.moves[newMove]
-                print(richting)
-        else:
-            #anders gebruik onze "strategy"
-            
-            #Kies een random richting uit de mogelijke richtingen
-            i = random.randrange(len(possibleMoves))
-            
-            newMove = possibleMoves[i]
-                
-            richting = self.moves[newMove]  
-            #self.MoveDir(i)  
-            print(richting)                 #Geef de richting door
-         #'''
         
         
     #bereken waar je terecht komt als je deze kant op gaat
@@ -607,17 +530,24 @@ class PlayingField:
                 self.gebieden[y].append(self.level[y][x])
         
         
-        
         T3 = time.perf_counter()
         #creëer gebieden bij iedere gate
         self.GebiedInfo = []
         self.gateInfo = []
-        toMerge = []
+        
+        
+        groups = []
+        groupPointers = {}
+        amountOfGroups = 0
+        
         huidigGebiedAantal = 0
         for gateNr in range(len(self.gates)):
             gate = self.gates[gateNr]
             x = gate[0]
             y = gate[1]
+            
+            self.gebieden[y][x] = "G" + str(gateNr)
+            
             up = self.checkXY((x, y-1))
             down = self.checkXY((x, y+1))
             left = self.checkXY((x-1, y))
@@ -625,6 +555,9 @@ class PlayingField:
             
             self.gateInfo.append({})
             
+            thisGroup = -1
+            if gateNr in groupPointers:
+                thisGroup = groupPointers[gateNr]
             
             for direction in [up, down, left, right]:
                 
@@ -646,9 +579,46 @@ class PlayingField:
                     #if int(found) not in self.gates[gateNr]:
                     #self.gateInfo[gateNr].append(int(found))
                 elif found == "G":
+                        
+                    
                     othergateNr = self.gates.index(direction)
-                    toMerge.append([gateNr, othergateNr])
+                    #toMerge.append([gateNr, othergateNr])
+                    
+                    
+                    otherGroup = -1
+                    if othergateNr in groupPointers:
+                        otherGroup = groupPointers[othergateNr]
+                    
+                    #print("thisGroup:", thisGroup, " - otherGroup:", otherGroup, "(", gateNr, ",", othergateNr,")")
+                        
+                    if thisGroup == -1:
+                        if otherGroup == -1:
+                            groups.append([gateNr, othergateNr])
+                            thisGroup = amountOfGroups
+                            otherGroup = amountOfGroups
+                            amountOfGroups += 1
+                        else:
+                            groups[otherGroup].append(gateNr)
+                            thisGroup = otherGroup
+                    else:
+                        if otherGroup == -1:
+                            groups[thisGroup].append(othergateNr)
+                            otherGroup = thisGroup
+                        else:
+                            for x in groups[otherGroup]:
+                                if x not in groups[thisGroup]:
+                                    groups[thisGroup].append(x)
+                                groupPointers[x] = thisGroup
+                            groups[otherGroup] = []
+                            
+                            #groups[thisGroup].extend(groups[otherGroup])
+                            otherGroup = thisGroup
+                    
+                    groupPointers[gateNr] = thisGroup
+                    groupPointers[othergateNr] = otherGroup
             
+            
+        print("groups created:", groups, "pointers:", groupPointers)
             #print("gate nr: ", gateNr, ":", self.gates[gateNr] ,"-", self.gateInfo[gateNr])
               
                 
@@ -657,11 +627,46 @@ class PlayingField:
         
         
         ##join gates here somewhere:
-        oldGateLength = len(self.gates)
-        self.gatePointers = {}
         
-        for gate in range(len(self.gates)):
-            self.gatePointers[gate] = gate
+        #make a gateMap
+        
+        
+        oldGateLength = len(self.gates)
+        #self.gatePointers = {}
+        #for gate in range(len(self.gates)):
+        #    self.gatePointers[gate] = gate
+            
+        added = 0
+        for group in groups:
+            if len(groups) > 0:
+                
+                newGateInfo = {}
+                beenAdded = []
+                for gateNr in group:
+                    if gateNr in beenAdded:
+                        continue
+                    else:
+                        beenAdded.append(gateNr)
+                    
+                    gatePos = self.gates[gateNr]
+                    self.gebieden[gatePos[1]][gatePos[0]] = "G" + str(oldGateLength + added)
+                    
+                    #self.gatePointers[gateNr] = oldGateLength + added
+                    
+                    for exit in self.gateInfo[gateNr].keys():
+                        exitAmount = self.gateInfo[gateNr][exit]
+                        if exit not in newGateInfo:
+                            newGateInfo[exit] = exitAmount
+                        else:
+                            newGateInfo[exit] += exitAmount
+                    
+                self.gateInfo.append(newGateInfo)
+                added += 1
+                
+        
+        
+        
+        '''
         
         added = 0
         for merge in toMerge:
@@ -682,7 +687,7 @@ class PlayingField:
                 
                 self.gateInfo.append(newGateInfo)
                 
-        
+        '''
         
         #print(toMerge);
             
