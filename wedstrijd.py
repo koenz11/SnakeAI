@@ -629,7 +629,7 @@ class PlayingField:
         for group in groups:
             if len(groups) > 0:
                 
-                newGateInfo = 
+                newGateInfo = {}
                 #creeer de nieuwe gateInfo voor de groep
                 beenAdded = []
                 for gateNr in group:
